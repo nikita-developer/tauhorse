@@ -1,0 +1,16 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN};
+    server_tokens off;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
+    location / {
+        default_type text/plain;
+        return 503 "Preparing HTTPS certificate\n";
+    }
+}

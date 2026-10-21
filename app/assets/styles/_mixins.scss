@@ -1,0 +1,29 @@
+@use './variables' as *;
+
+@mixin container {
+  width: min(100% - 32px, $container-width);
+  margin: 0 auto;
+}
+
+@mixin card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  box-shadow: $shadow-md;
+}
+
+@mixin button-reset {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+@mixin input {
+  width: 100%;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 12px 14px;
+  background: $color-surface;
+  color: $color-text;
+}

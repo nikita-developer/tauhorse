@@ -1,0 +1,64 @@
+@use '~/assets/styles/variables' as *;
+
+.admin-sidebar {
+  min-height: calc(100dvh - 120px);
+  padding: 24px 18px;
+  border-right: 1px solid $color-border;
+  background: $color-surface;
+}
+.admin-sidebar__head { display: flex; align-items: center; justify-content: space-between; }
+.admin-sidebar__title { margin: 0 8px 22px; color: #342719; font-size: 17px; }
+.admin-sidebar__toggle, .admin-sidebar__mobile-head, .admin-sidebar__backdrop { display: none; }
+.admin-sidebar__nav { display: grid; gap: 5px; }
+.admin-sidebar__nav a { display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 11px 12px; border-radius: 11px; color: #65584a; font-size: 14px; font-weight: 650; text-decoration: none; }
+.admin-sidebar__nav a > i { display:none; font-style:normal; }
+.admin-sidebar__nav a.router-link-active { background: #ede4d7; color: #3e2d1c; }
+.admin-sidebar__section{display:block;margin:14px 12px 4px;color:#9a8873;font-size:9px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+.admin-sidebar__section--first { margin-top: 0; }
+
+@media (max-width: 900px) {
+  :global(body.admin-mobile-menu-open) { overflow: hidden; }
+  .admin-sidebar { position: relative; z-index: 20; min-height: 0; padding: 9px 12px; border-right: 0; border-bottom: 1px solid $color-border; background:rgba(255,253,249,.96); box-shadow: 0 6px 18px rgba(48,32,17,.04); }
+  .admin-sidebar__title { display: none; }
+  .admin-sidebar__toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 50px; padding: 7px 13px 7px 14px; border: 1px solid rgba(111,82,48,.13); border-radius: 14px; background: #fff; color: #423120; cursor: pointer; box-shadow:0 5px 16px rgba(54,37,20,.04); }
+  .admin-sidebar__toggle > span { display:grid; gap:1px; text-align:left; }
+  .admin-sidebar__toggle small { color:#9a8873; font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .admin-sidebar__toggle strong { font-size:13px; font-weight:800; }
+  .admin-sidebar__toggle > i { display:grid; gap:3px; width:24px; height:24px; place-content:center; border-radius:8px; background:#f5eee5; }
+  .admin-sidebar__toggle > i b { display:block; width:12px; height:1.5px; border-radius:2px; background:#73583a; transition:transform .18s ease,opacity .18s ease; }
+  .admin-sidebar.is-open .admin-sidebar__toggle > i b:nth-child(1){transform:translateY(4.5px) rotate(45deg)}
+  .admin-sidebar.is-open .admin-sidebar__toggle > i b:nth-child(2){opacity:0}
+  .admin-sidebar.is-open .admin-sidebar__toggle > i b:nth-child(3){transform:translateY(-4.5px) rotate(-45deg)}
+
+  .admin-sidebar__backdrop { position:fixed; inset:0; z-index:40; display:block; border:0; background:rgba(31,24,18,.38); backdrop-filter:blur(2px); }
+  .admin-sidebar__nav {
+    position:fixed;
+    z-index:41;
+    left:0;
+    right:0;
+    bottom:0;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:4px;
+    max-height:min(72dvh,620px);
+    padding:14px 14px max(16px,env(safe-area-inset-bottom));
+    overflow-y:auto;
+    border-radius:24px 24px 0 0;
+    background:#fffdf9;
+    box-shadow:0 -18px 50px rgba(41,29,18,.17);
+    transform:translateY(105%);
+    visibility:hidden;
+    transition:transform .22s ease,visibility .22s ease;
+  }
+  .admin-sidebar.is-open .admin-sidebar__nav { transform:translateY(0); visibility:visible; }
+  .admin-sidebar__mobile-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:3px 4px 10px; border-bottom:1px solid rgba(111,82,48,.09); }
+  .admin-sidebar__mobile-head > div { display:grid; gap:2px; }
+  .admin-sidebar__mobile-head small { color:#9a8873;font-size:9px;font-weight:850;letter-spacing:.11em;text-transform:uppercase; }
+  .admin-sidebar__mobile-head strong { color:#342719;font-size:18px; }
+  .admin-sidebar__mobile-head button { display:grid; place-items:center; width:38px;height:38px;border:0;border-radius:12px;background:#f4ede4;color:#644b30;font-size:24px;line-height:1;cursor:pointer; }
+  .admin-sidebar__nav a { min-height:48px; padding:0 13px; border:1px solid transparent; border-radius:13px; background:#fbf8f3; text-align:left; font-size:14px; }
+  .admin-sidebar__nav a > i { display:block; color:#a58f73; font-size:22px; line-height:1; }
+  .admin-sidebar__nav a.router-link-active { border-color:rgba(111,82,48,.12); background:#eee4d6; color:#3e2d1c; }
+  .admin-sidebar__section { margin:11px 8px 2px; }
+  .admin-sidebar__section--first { margin-top:8px; }
+}

@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {hasStaffPermission,isStaffUser} from '../server/utils/permissions.js'
+test('admin has every staff permission',()=>{assert.equal(hasStaffPermission({role:'admin',is_active:true},'can_manage_orders'),true);assert.equal(hasStaffPermission({role:'admin',is_active:true},'can_manage_catalog'),true)})
+test('manager only has explicitly granted permissions',()=>{const u={role:'manager',is_active:true,can_manage_orders:true,can_manage_catalog:false};assert.equal(hasStaffPermission(u,'can_manage_orders'),true);assert.equal(hasStaffPermission(u,'can_manage_catalog'),false)})
+test('disabled staff loses access',()=>{assert.equal(isStaffUser({role:'manager',is_active:false}),false);assert.equal(hasStaffPermission({role:'admin',is_active:false},'can_manage_orders'),false)})

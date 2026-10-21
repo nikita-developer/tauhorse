@@ -1,0 +1,1 @@
+import service from '../../../services/campaign.service.js';import {requirePermission} from '../../../utils/access.js';import {sendJsonError} from '../../../utils/http.js';export default defineEventHandler(async e=>{try{await requirePermission(e,'can_manage_campaigns');return await service.list()}catch(x){sendJsonError(x)}})

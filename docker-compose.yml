@@ -1,0 +1,76 @@
+services:
+  db:
+    image: postgres:17.11-alpine3.24
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: horse_shop
+      POSTGRES_USER: horse_shop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U horse_shop -d horse_shop"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://horse_shop:${POSTGRES_PASSWORD}@db:5432/horse_shop?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      NUXT_JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      NUXT_JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      NUXT_JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      NUXT_JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      NUXT_PUBLIC_APP_URL: ${NUXT_PUBLIC_APP_URL:?Set NUXT_PUBLIC_APP_URL in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      NUXT_PUBLIC_SHOP_NAME: ${NUXT_PUBLIC_SHOP_NAME:-TauHorse}
+      NUXT_PUBLIC_BRAND_NAME: ${NUXT_PUBLIC_BRAND_NAME:-TauHorse}
+      NUXT_PUBLIC_CONTACT_PERSON: ${NUXT_PUBLIC_CONTACT_PERSON:-Юлия Котова}
+      NUXT_PUBLIC_SOCIAL_MAX: ${NUXT_PUBLIC_SOCIAL_MAX:-https://max.ru/u/f9LHodD0cOIOGWFsEvii_RphX3uoWncwmI6Cmhe8CIJ6NIbYsUrdgfSyWLM}
+      NUXT_PUBLIC_SOCIAL_WHATSAPP: ${NUXT_PUBLIC_SOCIAL_WHATSAPP:-https://wa.me/79013520534}
+      NUXT_PUBLIC_SOCIAL_AVITO: ${NUXT_PUBLIC_SOCIAL_AVITO:-https://www.avito.ru/dolgoprudnyy/tovary_dlya_zhivotnyh/lizunets_konfeta_dlya_loshadey_8222244356}
+      NUXT_PUBLIC_RELATED_PROJECT_URL: ${NUXT_PUBLIC_RELATED_PROJECT_URL:-https://ledenkon.ru/}
+      NUXT_PUBLIC_SHOP_EMAIL: ${NUXT_PUBLIC_SHOP_EMAIL:-zoloto666@inbox.ru}
+      NUXT_PUBLIC_SHOP_PHONE: ${NUXT_PUBLIC_SHOP_PHONE:-+79013520534}
+      NUXT_PUBLIC_SHOP_PHONE_DISPLAY: ${NUXT_PUBLIC_SHOP_PHONE_DISPLAY:-+7 901 352-05-34}
+      NUXT_PUBLIC_SHOP_ADDRESS: ${NUXT_PUBLIC_SHOP_ADDRESS:-г. Долгопрудный, Хлебниково, ул. Ленинградская, д. 24}
+      NUXT_PUBLIC_SELLER_NAME: ${NUXT_PUBLIC_SELLER_NAME:-ИП Туманова Елена Владимировна}
+      NUXT_PUBLIC_SELLER_ID: ${NUXT_PUBLIC_SELLER_ID:-321508100345153}
+      NUXT_PUBLIC_SELLER_INN: ${NUXT_PUBLIC_SELLER_INN:-507803101860}
+      NUXT_PUBLIC_SELLER_OGRNIP: ${NUXT_PUBLIC_SELLER_OGRNIP:-321508100345153}
+      NUXT_PUBLIC_SELLER_LEGAL_ADDRESS: ${NUXT_PUBLIC_SELLER_LEGAL_ADDRESS:-г. Долгопрудный, Хлебниково, ул. Ленинградская, д. 24}
+      NUXT_PUBLIC_SELLER_REGISTRATION_AUTHORITY: ${NUXT_PUBLIC_SELLER_REGISTRATION_AUTHORITY:-}
+      NUXT_PUBLIC_CLAIMS_EMAIL: ${NUXT_PUBLIC_CLAIMS_EMAIL:-zoloto666@inbox.ru}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      ORDER_NOTIFICATION_EMAIL: ${ORDER_NOTIFICATION_EMAIL:-}
+      MEDIA_ROOT: /app/uploads
+      MEDIA_MAX_BYTES: ${MEDIA_MAX_BYTES:-26214400}
+    volumes:
+      - product_media:/app/uploads
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+volumes:
+  product_media:
+    name: horse_feed_shop_media
+  postgres_data:
+    name: ${POSTGRES_VOLUME_NAME:-horsefix_postgres_data}

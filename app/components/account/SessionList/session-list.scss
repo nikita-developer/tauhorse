@@ -1,0 +1,28 @@
+.session-list {
+  padding: 20px;
+}
+
+.session-list__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.session-list__items {
+  display: grid;
+  gap: 12px;
+}
+
+.session-list__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.session-list__item p {
+  margin: 6px 0 0;
+}

@@ -1,0 +1,1 @@
+import service from '../../../services/discount.service.js';import {requirePermission} from '../../../utils/access.js';import {sendJsonError} from '../../../utils/http.js';export default defineEventHandler(async e=>{try{await requirePermission(e,'can_manage_discounts');return await service.listAll()}catch(x){sendJsonError(x)}})

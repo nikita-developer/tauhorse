@@ -1,0 +1,2 @@
+import audit from '../../../services/audit.service.js'; import {requireAdmin,sendJsonError} from '../../../utils/http.js'
+export default defineEventHandler(async e=>{try{await requireAdmin(e);const q=getQuery(e);return await audit.list({page:Number(q.page||1),limit:Number(q.limit||50),actor_user_id:q.actor_user_id,entity_type:q.entity_type,action:q.action,search:q.search,date_from:q.date_from,date_to:q.date_to})}catch(x){sendJsonError(x)}})

@@ -1,0 +1,10 @@
+const escapeHtml = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll("'",'&#039;')
+
+export const buildMarketingHtml = ({subject, body, appUrl}) => {
+  const shopName = 'TauHorse'
+  const safeSubject = escapeHtml(subject)
+  const paragraphs = String(body || '').split(/\n{2,}/).map(part => `<p style="margin:0 0 16px">${escapeHtml(part).replaceAll('\n','<br>')}</p>`).join('')
+  const catalogUrl = `${appUrl}/?on_sale=1#catalog`
+  const accountUrl = `${appUrl}/account`
+  return `<!doctype html><html><body style="margin:0;background:#f5f0e8;color:#332619;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f0e8;padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border-radius:18px;overflow:hidden;border:1px solid #e7ddcf"><tr><td style="padding:22px 28px;background:#3f3122;color:#fff"><div style="font-size:20px;font-weight:800">${shopName}</div><div style="margin-top:4px;font-size:12px;color:#ddcdb9">Корма и лизунцы для лошадей</div></td></tr><tr><td style="padding:30px 28px"><div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#8b6840">Новости магазина</div><h1 style="font-size:27px;line-height:1.2;margin:8px 0 20px;color:#332619">${safeSubject}</h1><div style="font-size:15px;line-height:1.7;color:#5e5246">${paragraphs}</div><div style="margin-top:26px"><a href="${escapeHtml(catalogUrl)}" style="display:inline-block;background:#6f5230;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:10px">Посмотреть товары со скидкой</a></div></td></tr><tr><td style="padding:18px 28px;background:#faf7f2;color:#82776b;font-size:11px;line-height:1.55">Вы получили письмо, потому что сами включили акции и новости магазина.<br><a href="${escapeHtml(accountUrl)}" style="color:#6f5230">Управлять рассылкой в личном кабинете</a></td></tr></table></td></tr></table></body></html>`
+}
