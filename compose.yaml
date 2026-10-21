@@ -1,0 +1,73 @@
+name: ${COMPOSE_PROJECT_NAME:-tauhorse}
+
+services:
+  db:
+    image: postgres:17.11-alpine3.24
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: horse_shop
+      POSTGRES_USER: horse_shop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U horse_shop -d horse_shop"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      target: runtime
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: "3000"
+      DATABASE_URL: postgresql://horse_shop:${POSTGRES_PASSWORD}@db:5432/horse_shop?schema=public
+      NUXT_JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET}
+      NUXT_JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET}
+      MEDIA_ROOT: /app/uploads
+    volumes:
+      - product_media:/app/uploads
+    networks:
+      - backend
+      - frontend
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+
+  nginx:
+    image: nginx:1.30.5-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "${HTTP_BIND_IP:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./nginx/tauhorse-http.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - frontend
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  backend:
+    internal: true
+  frontend:
+
+volumes:
+  postgres_data:
+    name: ${POSTGRES_VOLUME_NAME:-tauhorse_postgres}
+  product_media:
+    name: ${MEDIA_VOLUME_NAME:-tauhorse_media}
