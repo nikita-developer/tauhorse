@@ -57,6 +57,8 @@ services:
       - "${HTTP_BIND_IP:-127.0.0.1}:${HTTP_PORT:-8080}:80"
     volumes:
       - ./nginx/tauhorse-http.conf:/etc/nginx/conf.d/default.conf:ro
+      - acme_webroot:/var/www/certbot:ro
+      - tls_certs:/etc/letsencrypt:ro
     networks:
       - frontend
     security_opt:
@@ -72,3 +74,5 @@ volumes:
     name: ${POSTGRES_VOLUME_NAME:-tauhorse_postgres}
   product_media:
     name: ${MEDIA_VOLUME_NAME:-tauhorse_media}
+  acme_webroot:
+  tls_certs:
