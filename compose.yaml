@@ -30,6 +30,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      COOKIE_SECURE: "true"
       NITRO_HOST: 0.0.0.0
       NITRO_PORT: "3000"
       DATABASE_URL: postgresql://horse_shop:${POSTGRES_PASSWORD}@db:5432/horse_shop?schema=public
