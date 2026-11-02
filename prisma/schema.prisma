@@ -13,7 +13,7 @@ model User {
   password   String
   role       String   @default("user")
   created_at DateTime @default(now())
-  order_notifications_enabled Boolean @default(true)
+  order_notifications_enabled Boolean @default(false)
   marketing_emails_enabled Boolean @default(false)
   marketing_consent_at DateTime?
   marketing_consent_revoked_at DateTime?

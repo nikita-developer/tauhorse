@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {catalogFiltersFromQuery,catalogFiltersToQuery,defaultCatalogFilters,getCatalogPriceRangeError,normalizeCatalogPriceRange} from '../app/utils/catalog-filters.js'
+import {catalogFiltersFromQuery,catalogFiltersToQuery,defaultCatalogFilters,getCatalogPriceRangeError,normalizeCatalogPriceRange,withoutAdvancedCatalogFilters,visibleCatalogFilters,SHOW_ADVANCED_CATALOG_FILTERS} from '../app/utils/catalog-filters.js'
 
 test('catalog filters round-trip through URL query',()=>{
   const filters={...defaultCatalogFilters(),search:'мюсли',min_price:'500',max_price:'5000',in_stock:true,on_sale:true,category_id:'7',sort_by:'price',sort_order:'desc'}
@@ -27,4 +27,20 @@ test('invalid price range from URL is normalized instead of causing API 400',()=
   assert.equal(result.min_price,'1000')
   assert.equal(result.max_price,'2000')
   assert.deepEqual(normalizeCatalogPriceRange({min_price:'9',max_price:'2'}),{min_price:'2',max_price:'9'})
+})
+
+test('temporarily hidden price and sort filters are neutralised on the storefront', () => {
+  const filters = { ...defaultCatalogFilters(), search:'мюсли', in_stock:true, min_price:'500',max_price:'1000',sort_by:'price',sort_order:'desc' }
+  const result = withoutAdvancedCatalogFilters(filters)
+  assert.equal(result.search, 'мюсли')
+  assert.equal(result.in_stock, true)
+  assert.equal(result.min_price, '')
+  assert.equal(result.max_price, '')
+  assert.equal(result.sort_by, 'catalog_position')
+  assert.equal(result.sort_order, 'asc')
+})
+
+test('storefront advanced filter visibility uses one shared feature flag', () => {
+  assert.equal(SHOW_ADVANCED_CATALOG_FILTERS, false)
+  assert.deepEqual(visibleCatalogFilters({min_price:'500',sort_by:'price'}),{min_price:'',max_price:'',sort_by:'catalog_position',sort_order:'asc'})
 })

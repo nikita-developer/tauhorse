@@ -1,17 +1,18 @@
 import {computed, onBeforeUnmount, onMounted, reactive, watch} from 'vue'
-import {defaultCatalogFilters, getCatalogPriceRangeError, normalizeCatalogPriceRange} from '~/utils/catalog-filters'
+import {defaultCatalogFilters, getCatalogPriceRangeError, normalizeCatalogPriceRange, withoutAdvancedCatalogFilters} from '~/utils/catalog-filters'
 
 const STORAGE_KEY = 'tauhorse:catalog-filters:v2'
 const hasNonDefault = filters => Object.entries(defaultCatalogFilters()).some(([key, value]) => String(filters?.[key] ?? value) !== String(value))
 
-export const useCatalogFilters = (emit, initial_filters = {}) => {
+export const useCatalogFilters = (emit, initial_filters = {}, {showAdvancedFilters = true} = {}) => {
+  const visibleFilters = filters => showAdvancedFilters ? filters : withoutAdvancedCatalogFilters(filters)
   let saved_filters = {}
   if (import.meta.client) {
     try { saved_filters = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {} } catch { saved_filters = {} }
   }
 
-  saved_filters = normalizeCatalogPriceRange({...defaultCatalogFilters(), ...saved_filters})
-  const initial = hasNonDefault(initial_filters) ? initial_filters : {...saved_filters, ...initial_filters}
+  saved_filters = visibleFilters(normalizeCatalogPriceRange({...defaultCatalogFilters(), ...saved_filters}))
+  const initial = visibleFilters(hasNonDefault(initial_filters) ? initial_filters : {...saved_filters, ...initial_filters})
   const local_filters = reactive({...defaultCatalogFilters(), ...normalizeCatalogPriceRange(initial)})
   let debounce_timeout = null
   let is_syncing = false
@@ -19,7 +20,7 @@ export const useCatalogFilters = (emit, initial_filters = {}) => {
   const price_error = computed(() => getCatalogPriceRangeError(local_filters))
   const submitFilters = () => {
     if (price_error.value) return
-    emit('submit', {...local_filters, page: 1})
+    emit('submit', {...visibleFilters(local_filters), page: 1})
   }
 
   const persist = () => {
@@ -30,7 +31,7 @@ export const useCatalogFilters = (emit, initial_filters = {}) => {
   const setFilters = filters => {
     is_syncing = true
     clearTimeout(debounce_timeout)
-    Object.assign(local_filters, {...defaultCatalogFilters(), ...normalizeCatalogPriceRange(filters)})
+    Object.assign(local_filters, visibleFilters({...defaultCatalogFilters(), ...normalizeCatalogPriceRange(filters)}))
     persist()
     queueMicrotask(() => { is_syncing = false })
   }

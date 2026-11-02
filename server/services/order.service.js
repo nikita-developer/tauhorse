@@ -24,6 +24,14 @@ import {
   roundMoney
 } from '../utils/validation.js'
 
+// Фото заказа берём из ProductMedia, а не только из устаревшего image_url.
+const product_with_preview = {
+  include: {
+    category: true,
+    media: {where: {media_type: 'image'}, orderBy: {sort_order: 'asc'}, take: 1}
+  }
+}
+
 const allowed_admin_order_sort_fields = ['created_at', 'total_price', 'status']
 const allowed_sort_orders = ['asc', 'desc']
 
@@ -68,7 +76,7 @@ const getExistingCart = async request => {
     where: owner_where,
     include: {
       items: {
-        include: {product: true}
+        include: {product: product_with_preview}
       }
     }
   })
@@ -78,7 +86,7 @@ const getExistingCart = async request => {
 
 const createOrderFromCart = async (request, form) => {
   const customer = validateOrderForm(form)
-  const existing_order = await prisma.order.findUnique({where: {idempotency_key: customer.idempotency_key}, include: {items: {include: {product: true}}}})
+  const existing_order = await prisma.order.findUnique({where: {idempotency_key: customer.idempotency_key}, include: {items: {include: {product: product_with_preview}}}})
   if (existing_order) return idempotentOrderResult(request, existing_order)
   const {cart, guest_token, should_set_guest_cookie} = await getExistingCart(request)
 
@@ -153,7 +161,7 @@ const createOrderFromCart = async (request, form) => {
         }
       },
       include: {
-        items: {include: {product: true}}
+        items: {include: {product: product_with_preview}}
       }
     })
 
@@ -164,7 +172,7 @@ const createOrderFromCart = async (request, form) => {
     if (error?.code === 'P2002') {
       const raced_order = await prisma.order.findUnique({
         where: {idempotency_key: customer.idempotency_key},
-        include: {items: {include: {product: true}}}
+        include: {items: {include: {product: product_with_preview}}}
       })
       if (raced_order) return idempotentOrderResult(request, raced_order)
     }
@@ -191,7 +199,7 @@ const getMyOrders = async request => {
   const orders = await prisma.order.findMany({
     where: {user_id: request.user.id},
     include: {
-      items: {include: {product: true}}
+      items: {include: {product: product_with_preview}}
     },
     orderBy: {created_at: 'desc'}
   })
@@ -210,7 +218,7 @@ const getGuestOrders = async request => {
   const orders = await prisma.order.findMany({
     where: {guest_token},
     include: {
-      items: {include: {product: true}}
+      items: {include: {product: product_with_preview}}
     },
     orderBy: {created_at: 'desc'}
   })
@@ -223,7 +231,7 @@ const findOrderById = async order_id => {
   const order = await prisma.order.findUnique({
     where: {id: numeric_order_id},
     include: {
-      items: {include: {product: true}}
+      items: {include: {product: product_with_preview}}
     }
   })
 
@@ -255,7 +263,7 @@ const getOrderById = async (request, order_id) => {
 
 const getAdminOrderById = async (request, order_id) => {
   const id=parsePositiveInteger(order_id,'id заказа')
-  const order=await prisma.order.findUnique({where:{id},include:{items:{include:{product:true}},user:{select:{id:true,email:true,role:true}},assigned_manager:{select:{id:true,email:true,role:true,is_active:true}},credited_manager:{select:{id:true,email:true,role:true,is_active:true}}}})
+  const order=await prisma.order.findUnique({where:{id},include:{items:{include:{product:product_with_preview}},user:{select:{id:true,email:true,role:true}},assigned_manager:{select:{id:true,email:true,role:true,is_active:true}},credited_manager:{select:{id:true,email:true,role:true,is_active:true}}}})
   if(!order) throw ApiError.notFound('Заказ не найден')
   ensureManagerCanHandleOrder(request,order)
   return withoutAdminOrderSecret(order)
@@ -302,10 +310,10 @@ const updateOrderStatus = async (request, order_id, status) => {
     if(transition.count!==1) throw ApiError.badRequest('Статус заказа уже изменился. Обновите страницу')
     if(status==='cancelled') for(const item of order.items) await tx.product.update({where:{id:item.product_id},data:{stock:{increment:item.quantity}}})
     await tx.orderStatusHistory.create({data:{order_id:order.id,from_status:order.status,to_status:status,changed_by:request.user?.id||null,change_source:'staff'}})
-    return tx.order.findUnique({where:{id:numeric_order_id},include:{items:{include:{product:true}},user:{select:{order_notifications_enabled:true}},assigned_manager:{select:{id:true,email:true,role:true}},credited_manager:{select:{id:true,email:true,role:true}}}})
+    return tx.order.findUnique({where:{id:numeric_order_id},include:{items:{include:{product:product_with_preview}},user:{select:{order_notifications_enabled:true}},assigned_manager:{select:{id:true,email:true,role:true}},credited_manager:{select:{id:true,email:true,role:true}}}})
   })
   await writeAuditLog({request,action:auditActions.ORDER_STATUS,entity_type:'order',entity_id:numeric_order_id,entity_label:`Заказ №${numeric_order_id}`,details:{to_status:status,assigned_manager_id:updated_order.assigned_manager_id||null,credited_manager_id:updated_order.credited_manager_id||null}})
-  const should_send_status_email=!updated_order.user_id||updated_order.user?.order_notifications_enabled!==false
+  const should_send_status_email=updated_order.user?.order_notifications_enabled === true
   if(should_send_status_email) mail_service.sendOrderStatusEmail(updated_order).catch(error=>console.error(`Не удалось отправить уведомление о статусе заказа №${updated_order.id}`,error))
   const {user:_user_preferences,...safe}=updated_order
   return withoutOrderSecret(safe)
@@ -337,7 +345,7 @@ const assignOrder = async (request, order_id, manager_id) => {
     if(request.user.role==='manager') throw ApiError.forbidden('Заказ уже закреплён за другим менеджером или недоступен')
     throw ApiError.badRequest('Заказ уже завершён или отменён. Обновите страницу')
   }
-  const updated=await prisma.order.findUnique({where:{id},include:{items:{include:{product:true}},assigned_manager:{select:{id:true,email:true,role:true,is_active:true}},credited_manager:{select:{id:true,email:true,role:true,is_active:true}}}})
+  const updated=await prisma.order.findUnique({where:{id},include:{items:{include:{product:product_with_preview}},assigned_manager:{select:{id:true,email:true,role:true,is_active:true}},credited_manager:{select:{id:true,email:true,role:true,is_active:true}}}})
   await writeAuditLog({request,action:auditActions.ORDER_ASSIGN,entity_type:'order',entity_id:id,entity_label:`Заказ №${id}`,details:{from:order.assigned_manager_id||null,from_manager_email:order.assigned_manager?.email||null,to:targetId,to_manager_email:manager?.email||null}})
   return withoutAdminOrderSecret(updated)
 }
@@ -371,7 +379,7 @@ const cancelCustomerOrder = async (request, order_id, {restore_to_cart=true}={})
         else await tx.cartItem.create({data:{cart_id:cart.id,product_id:item.product_id,quantity}})
       }
     }
-    return tx.order.findUnique({where:{id},include:{items:{include:{product:true}}}})
+    return tx.order.findUnique({where:{id},include:{items:{include:{product:product_with_preview}}}})
   })
   await writeAuditLog({request,action:auditActions.ORDER_CUSTOMER_CANCEL,entity_type:'order',entity_id:id,entity_label:`Заказ №${id}`,details:{restore_to_cart,skipped}})
   mail_service.sendOrderStatusEmail(result).catch(error=>console.error(`Не удалось отправить уведомление об отмене заказа №${id}`,error))
@@ -450,7 +458,7 @@ const getAdminOrders = async (request, {
     prisma.order.findMany({
       where,
       include: {
-        items: {include: {product: true}},
+        items: {include: {product: product_with_preview}},
         user: {select: {id: true, email: true, role: true}},
         assigned_manager:{select:{id:true,email:true,role:true,is_active:true}},
         credited_manager:{select:{id:true,email:true,role:true,is_active:true}}
@@ -564,7 +572,7 @@ const updateAdminOrder = async (request, order_id, changes = {}) => {
   if (!current_order.assigned_manager_id && is_manager) { data.assigned_manager_id=request.user.id; data.assigned_at=new Date() }
   if (!Object.keys(data).length) return await getAdminOrderById(request,numeric_order_id)
 
-  const include = {items:{include:{product:true}},assigned_manager:{select:{id:true,email:true,role:true,is_active:true}},credited_manager:{select:{id:true,email:true,role:true,is_active:true}}}
+  const include = {items:{include:{product:product_with_preview}},assigned_manager:{select:{id:true,email:true,role:true,is_active:true}},credited_manager:{select:{id:true,email:true,role:true,is_active:true}}}
   const order = is_manager
     ? await prisma.$transaction(async tx => {
         const changed = await tx.order.updateMany({

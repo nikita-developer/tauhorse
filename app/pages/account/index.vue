@@ -21,7 +21,7 @@
           <div class="account-card__setting-copy">
             <span class="account-card__label">Почтовые уведомления</span>
             <h2>Статусы заказов</h2>
-            <p>Получать письмо, когда администратор меняет статус заказа: оплачен, собирается, отправлен, доставлен и другие.</p>
+            <p>Выключено по умолчанию. Включите, чтобы получать письма, когда администратор меняет статус заказа: оплачен, собирается, отправлен, доставлен и другие.</p>
           </div>
 
           <label class="account-switch" :class="{'is-disabled': is_saving}">
@@ -61,7 +61,7 @@ import {useAuthStore} from '~/stores/auth'
 import {getApiErrorMessage} from '~/utils/api'
 
 const auth_store = useAuthStore()
-const notifications_enabled = ref(auth_store.user?.order_notifications_enabled !== false)
+const notifications_enabled = ref(auth_store.user?.order_notifications_enabled === true)
 const marketing_enabled = ref(auth_store.user?.marketing_emails_enabled === true)
 const is_saving_marketing = ref(false)
 const is_saving = ref(false)
@@ -72,6 +72,14 @@ watch(
   () => auth_store.user?.order_notifications_enabled,
   value => {
     if (typeof value === 'boolean') notifications_enabled.value = value
+  },
+  {immediate: true}
+)
+
+watch(
+  () => auth_store.user?.marketing_emails_enabled,
+  value => {
+    marketing_enabled.value = value === true
   },
   {immediate: true}
 )

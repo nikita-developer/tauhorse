@@ -89,7 +89,7 @@
 .catalog-filters__check-copy strong { color: #4a3928; font-size: 12px; }
 .catalog-filters__check-copy small { color: #8a7d70; font-size: 9px; line-height: 1.35; }
 
-.catalog-filters__footer { display: grid; gap: 10px; padding-top: 16px; border-top: 1px solid rgba(111,82,48,.1); }
+.catalog-filters__footer { display: grid; gap: 0; padding-top: 16px; border-top: 1px solid rgba(111,82,48,.1); }
 .catalog-filters__status { display: flex; align-items: center; gap: 7px; min-height: 15px; color: #918476; font-size: 9px; line-height: 1.35; }
 .catalog-filters__status i { flex: 0 0 auto; width: 10px; height: 10px; border: 2px solid #ded2c4; border-right-color: #785938; border-radius: 50%; animation: catalog-filter-spin .7s linear infinite; }
 .catalog-filters__reset { min-height: 40px; border: 1px solid rgba(111,82,48,.13); border-radius: 12px; background: #fff; color: #60492f; font-size: 11px; font-weight: 800; cursor: pointer; }

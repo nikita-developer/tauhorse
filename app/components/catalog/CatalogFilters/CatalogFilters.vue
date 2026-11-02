@@ -70,7 +70,7 @@
             />
           </div>
 
-          <div class="catalog-filters__section catalog-filters__price-section">
+          <div v-if="show_advanced_filters" class="catalog-filters__section catalog-filters__price-section">
             <div class="catalog-filters__section-title-row">
               <span class="catalog-filters__section-title">Цена, ₽</span>
               <button v-if="local_filters.min_price || local_filters.max_price" class="catalog-filters__price-reset" type="button" @click="resetPrice">Сбросить</button>
@@ -145,7 +145,7 @@
             <p v-if="price_error" class="catalog-filters__error" role="alert">{{ price_error }}</p>
           </div>
 
-          <div class="catalog-filters__section">
+          <div v-if="show_advanced_filters" class="catalog-filters__section">
             <span class="catalog-filters__section-title">Сортировка</span>
             <div class="catalog-filters__sort-row">
               <AppSelect
@@ -185,7 +185,7 @@
           </div>
 
           <div class="catalog-filters__footer">
-            <span class="catalog-filters__status" role="status"><i v-if="is_loading"></i>{{ price_error ? 'Исправьте диапазон цен' : (is_loading ? 'Обновляем товары…' : 'Фильтры применяются автоматически') }}</span>
+            <span v-if="is_loading" class="catalog-filters__status" role="status"><i></i>Обновляем товары…</span>
             <button class="catalog-filters__reset" type="button" :disabled="!has_active_filters" @click="resetFilters">Сбросить всё</button>
           </div>
         </div>
@@ -207,7 +207,7 @@ import AppSelect from '~/components/ui/AppSelect.vue'
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import './catalog-filters.scss'
 import {useCatalogFilters} from './useCatalogFilters'
-import {catalogFiltersFromQuery} from '~/utils/catalog-filters'
+import {catalogFiltersFromQuery, visibleCatalogFilters, SHOW_ADVANCED_CATALOG_FILTERS} from '~/utils/catalog-filters'
 
 const emit = defineEmits(['submit'])
 const props = defineProps({
@@ -216,6 +216,8 @@ const props = defineProps({
   result_count: {type: Number, default: 0},
   price_range: {type: Object, default: () => ({min: 0, max: 0})}
 })
+// Временно скрываем цену и сортировку, сохраняя всю логику для их возврата.
+const show_advanced_filters = SHOW_ADVANCED_CATALOG_FILTERS
 const route = useRoute()
 const filters_root = ref(null)
 const is_open = ref(false)
@@ -282,8 +284,10 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-const {local_filters, resetFilters, has_active_filters, active_count, setFilters, price_error} = useCatalogFilters(emit, catalogFiltersFromQuery(route.query))
-watch(() => route.query, query => setFilters(catalogFiltersFromQuery(query)), {deep: true})
+const {local_filters, resetFilters, has_active_filters, active_count, setFilters, price_error} = useCatalogFilters(
+  emit, visibleCatalogFilters(catalogFiltersFromQuery(route.query)), {showAdvancedFilters: show_advanced_filters}
+)
+watch(() => route.query, query => setFilters(visibleCatalogFilters(catalogFiltersFromQuery(query))), {deep: true})
 
 const category_options = computed(() => [
   {value: '', label: 'Все товары'},

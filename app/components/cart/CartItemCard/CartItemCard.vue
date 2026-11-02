@@ -2,16 +2,7 @@
   <article class="cart-item-card">
     <div class="cart-item-card__media-wrap">
       <NuxtLink :to="`/products/${item.product.id}`" class="cart-item-card__media">
-        <img
-            v-if="product_image"
-            :src="product_image"
-            :alt="item.product.name"
-            class="cart-item-card__image"
-        >
-
-        <div v-else class="cart-item-card__image-placeholder">
-          <span>{{ item.product.category?.name || 'Товары для лошадей' }}</span>
-        </div>
+        <ProductImage :product="item.product" class="cart-item-card__image" />
       </NuxtLink>
 
       <button
@@ -66,6 +57,7 @@
 
 <script setup>
 import AppNumberInput from '~/components/ui/AppNumberInput.vue'
+import ProductImage from '~/components/ui/ProductImage.vue'
 import './cart-item-card.scss'
 import {useCartItemCard} from './useCartItemCard'
 
@@ -78,7 +70,6 @@ const props = defineProps({
 
 const {
   local_quantity,
-  product_image,
   handleInputChange,
   increaseQuantity,
   decreaseQuantity,

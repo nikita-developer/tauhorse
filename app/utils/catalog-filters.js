@@ -59,3 +59,20 @@ export const catalogFiltersToQuery = filters => {
   if (filters.sort_order && filters.sort_order !== 'asc') query.sort_order = filters.sort_order
   return query
 }
+
+// Для возврата цены и сортировки поменяйте только этот флаг на true.
+export const SHOW_ADVANCED_CATALOG_FILTERS = false
+
+// Временно скрытые на витрине фильтры не должны продолжать действовать
+// из старых URL или localStorage. API/параметры сохраняются для возврата UI.
+export const withoutAdvancedCatalogFilters = filters => ({
+  ...filters,
+  min_price: '',
+  max_price: '',
+  sort_by: 'catalog_position',
+  sort_order: 'asc'
+})
+
+export const visibleCatalogFilters = filters => SHOW_ADVANCED_CATALOG_FILTERS
+  ? filters
+  : withoutAdvancedCatalogFilters(filters)

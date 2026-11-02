@@ -99,6 +99,7 @@
       </div>
     </div>
 
+    <Teleport to="body">
     <transition name="header-mobile-fade">
       <div
           v-if="is_mobile_menu_open"
@@ -210,6 +211,7 @@
           </div>
       </div>
     </transition>
+    </Teleport>
   </header>
 </template>
 

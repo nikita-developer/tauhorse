@@ -14,21 +14,6 @@ export const useCartItemCard = props => {
   const local_total = computed(() => Number(props.item.product.effective_price ?? props.item.product.price ?? 0) * local_quantity.value)
   let queued_quantity = null
 
-  const product_image = computed(() => {
-    const direct_image =
-        props.item.product.media?.find(item => item.media_type === 'image')?.url ||
-        props.item.product.image ||
-        props.item.product.image_url ||
-        props.item.product.preview_image ||
-        props.item.product.photo ||
-        ''
-
-    if (direct_image) {
-      return direct_image
-    }
-
-    return ''
-  })
 
   let update_timeout = null
 
@@ -120,7 +105,6 @@ export const useCartItemCard = props => {
 
   return {
     local_quantity,
-    product_image,
     handleInputChange,
     increaseQuantity,
     decreaseQuantity,

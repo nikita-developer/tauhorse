@@ -28,7 +28,14 @@ const getCartOwnerData = request => {
 
 const cart_include = {
   items: {
-    include: {product: true}
+    include: {
+      product: {
+        include: {
+          category: true,
+          media: {where: {media_type: 'image'}, orderBy: {sort_order: 'asc'}, take: 1}
+        }
+      }
+    }
   }
 }
 

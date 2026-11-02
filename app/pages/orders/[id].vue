@@ -48,8 +48,7 @@
               <div class="order-items">
                 <article v-for="item in order.items" :key="item.id" class="order-item">
                   <div class="order-item__media">
-                    <img v-if="getProductImage(item.product)" :src="getProductImage(item.product)" :alt="item.product?.name || 'Товар'">
-                    <span v-else>{{ item.product?.category?.name || 'TauHorse' }}</span>
+                    <ProductImage :product="item.product" />
                   </div>
 
                   <div class="order-item__content">
@@ -134,6 +133,7 @@
 
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
+import ProductImage from '~/components/ui/ProductImage.vue'
 import {useOrdersStore} from '~/stores/orders'
 import {useAuthStore} from '~/stores/auth'
 import {getOrderStatusLabel} from '~/utils/order-status'
@@ -184,7 +184,6 @@ const productWord = count => {
   return 'товаров'
 }
 
-const getProductImage = product => product?.image || product?.image_url || product?.preview_image || product?.photo || ''
 
 const getOrderToken = () => {
   if (import.meta.client && route.hash) return new URLSearchParams(route.hash.replace(/^#/, '')).get('token') || ''
@@ -295,7 +294,7 @@ onBeforeUnmount(() => {
 .order-item:last-child { padding-bottom: 0; border-bottom: 0; }
 .order-item__media { display: grid; place-items: center; width: 68px; height: 68px; overflow: hidden; border-radius: 14px; background: linear-gradient(135deg,#f2e9dc,#e6d8c3); }
 .order-item__media img { width: 100%; height: 100%; object-fit: cover; }
-.order-item__media span { padding: 6px; color: #785a37; font-size: 9px; font-weight: 800; text-align: center; text-transform: uppercase; }
+
 .order-item__content p { margin: 0 0 3px; color: #92744f; font-size: 10px; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
 .order-item__content h3 { margin: 0 0 5px; color: #332619; font-size: 15px; }
 .order-item__content span { color: #7a7065; font-size: 12px; }
