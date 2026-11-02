@@ -1,6 +1,7 @@
 import {defineStore} from 'pinia'
 import {createApiUrl} from '~/utils/api'
 import {useAuthStore} from '~/stores/auth'
+import {sortCartItems} from '~/utils/cart-items'
 
 export const useCartStore = defineStore('cart', {
     state: () => ({
@@ -11,7 +12,7 @@ export const useCartStore = defineStore('cart', {
     }),
 
     getters: {
-        items: state => Array.isArray(state.cart?.items) ? state.cart.items : [],
+        items: state => sortCartItems(state.cart?.items),
         total_price: state => Number(state.cart?.total_price || 0),
         regular_subtotal: state => Number(state.cart?.regular_subtotal ?? state.cart?.subtotal ?? state.cart?.total_price ?? 0),
         promotion_discount_amount: state => Number(state.cart?.promotion_discount_amount || 0),

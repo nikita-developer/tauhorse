@@ -28,6 +28,7 @@ const getCartOwnerData = request => {
 
 const cart_include = {
   items: {
+    orderBy: {id: 'asc'},
     include: {
       product: {
         include: {

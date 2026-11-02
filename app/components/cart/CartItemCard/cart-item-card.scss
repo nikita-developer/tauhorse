@@ -306,6 +306,27 @@
 
 .cart-item-card__old-unit{margin-right:6px;color:#a09283;text-decoration:line-through}
 
-.cart-item-card__quantity--unified{display:block;max-width:170px}
-.cart-item-card__quantity--unified .app-number{width:100%}
-@media(max-width:560px){.cart-item-card__quantity--unified{max-width:none}}
+.cart-item-card__quantity--unified {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+.cart-item-card .cart-item-card__quantity--unified .app-number.is-compact {
+  width: 100%;
+  grid-template-columns: minmax(30px, 1fr) minmax(32px, 1.2fr) minmax(30px, 1fr);
+  min-height: 44px;
+}
+.cart-item-card .cart-item-card__quantity--unified .app-number__button {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  font-size: 19px;
+}
+.cart-item-card .cart-item-card__quantity--unified .app-number__input {
+  width: 100%;
+  min-height: 44px;
+  padding-inline: 2px;
+  font-size: 14px;
+}
+

@@ -366,6 +366,6 @@ const resetPrice = () => {
 }
 const formatPrice = value => `${new Intl.NumberFormat('ru-RU', {maximumFractionDigits: 0}).format(Number(value || 0))} ₽`
 
-const mobile_summary = computed(() => active_count.value ? `Выбрано фильтров: ${active_count.value}` : 'Категория, цена, наличие и сортировка')
+const mobile_summary = computed(() => active_count.value ? `Выбрано фильтров: ${active_count.value}` : 'Поиск, категории и наличие')
 const productCountWord = count => { const n=Math.abs(Number(count)||0)%100; const n1=n%10; if(n>10&&n<20)return 'товаров'; if(n1>1&&n1<5)return 'товара'; if(n1===1)return 'товар'; return 'товаров' }
 </script>
