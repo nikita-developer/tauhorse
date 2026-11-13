@@ -124,11 +124,69 @@ const buildOrderLines = order => (order.items || []).map(item => {
   return `${product_name}: ${item.quantity} × ${formatMoney(item.price)} ₽`
 })
 
+const buildAdminOrderMessage = order => {
+  const link = `${getAppUrl()}/admin/orders/${order.id}`
+  const date = new Intl.DateTimeFormat('ru-RU', {
+    dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Moscow'
+  }).format(new Date(order.created_at || Date.now()))
+  const lines = buildOrderLines(order)
+  const discount = Number(order.discount_amount || 0)
+  const rows = [
+    `Новый заказ №${order.id} — ${date} (МСК)`,
+    `Покупатель: ${order.name}`,
+    `Телефон: ${order.phone}`,
+    `Email: ${order.email}`,
+    `Получение: ${getDeliveryText(order)}`,
+    `Адрес: ${order.address || 'Не указан'}`,
+    ...(order.postal_code ? [`Почтовый индекс: ${order.postal_code}`] : []),
+    ...(order.comment ? [`Комментарий: ${order.comment}`] : []),
+    'Оплата: согласуется с покупателем',
+    '',
+    'Товары:',
+    ...lines,
+    `Стоимость товаров до скидки: ${formatMoney(order.subtotal)} ₽`,
+    ...(discount > 0 ? [`Скидка: ${formatMoney(discount)} ₽ (${formatMoney(order.discount_percent)}%)`] : []),
+    `${getOrderTotalLabel(order)}: ${formatMoney(order.total_price)} ₽`,
+    '',
+    `Открыть в админке: ${link}`
+  ]
+  const details = [
+    ['Покупатель', order.name],
+    ['Телефон', order.phone],
+    ['Email', order.email],
+    ['Получение', getDeliveryText(order)],
+    ['Адрес', order.address || 'Не указан'],
+    ...(order.postal_code ? [['Индекс', order.postal_code]] : []),
+    ...(order.comment ? [['Комментарий', order.comment]] : []),
+    ['Оплата', 'По согласованию']
+  ]
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#2f2418;max-width:620px;margin:0 auto;padding:24px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a6a42">TauHorse · новый заказ</div>
+      <h2 style="margin:8px 0 4px">Заказ №${order.id}</h2>
+      <p style="margin:0 0 18px;color:#756b60">${escapeHtml(date)} (МСК)</p>
+      <h3>Данные покупателя</h3>
+      ${details.map(([name, value]) => `<p style="margin:5px 0"><strong>${escapeHtml(name)}:</strong> ${escapeHtml(value)}</p>`).join('')}
+      <h3>Состав заказа</h3>
+      <ul>${lines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}</ul>
+      <p>Товары до скидки: <strong>${formatMoney(order.subtotal)} ₽</strong></p>
+      ${discount > 0 ? `<p>Скидка: <strong>${formatMoney(discount)} ₽ (${formatMoney(order.discount_percent)}%)</strong></p>` : ''}
+      <p><strong>${escapeHtml(getOrderTotalLabel(order))}: ${formatMoney(order.total_price)} ₽</strong></p>
+      ${order.delivery_method !== 'pickup' && order.delivery_price_confirmed !== true ? '<p style="color:#765e43">Стоимость доставки ещё не согласована и не включена в сумму.</p>' : ''}
+      <p style="margin:24px 0"><a href="${escapeHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#6f5230;color:#fff;text-decoration:none;font-weight:700">Открыть заказ в админке</a></p>
+    </div>`
+  return {subject: `TauHorse — новый заказ №${order.id}`, text: rows.join('\n'), html}
+}
+
 const sendOrderCreatedEmails = async order => {
   const transporter = createTransporter()
-  if (!transporter) return false
+  if (!transporter) {
+    console.error(`SMTP не настроен: письма о заказе №${order.id} не отправлены`)
+    return false
+  }
 
   const config = useRuntimeConfig()
+  const admin_email = String(process.env.ORDER_NOTIFICATION_EMAIL || config.orderNotificationEmail || '').trim()
   const lines = buildOrderLines(order)
   const order_link = `${getAppUrl()}/orders/${order.id}`
   const text = `TauHorse получил заказ №${order.id}. Он будет подтверждён после связи с вами.\n\n${lines.join('\n')}\n\nПолучение: ${getDeliveryText(order)}\n${getOrderTotalLabel(order)}: ${formatMoney(order.total_price)} ₽\nПолучатель: ${order.name}\nТелефон: ${order.phone}\nДанные доставки: ${order.address}\n\nСтатус заказа: ${order_link}`
@@ -137,7 +195,7 @@ const sendOrderCreatedEmails = async order => {
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#2f2418;max-width:620px;margin:0 auto;padding:24px">
       <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#8a6a42">TauHorse</div>
       <h2 style="margin:8px 0 16px">Заказ №${order.id} получен</h2>
-      <p>Спасибо! Мы получили заказ. Юлия свяжется с вами, чтобы подтвердить наличие, способ получения, стоимость доставки и оплату. До этого заказ считается полученным, но ещё не подтверждённым.</p>
+      <p>Спасибо! Мы получили заказ. Мы свяжемся с вами, чтобы подтвердить наличие, способ получения, стоимость доставки и оплату.</p>
       <ul>${html_lines}</ul>
       <p><strong>Получение:</strong> ${escapeHtml(getDeliveryText(order))}<br><strong>${escapeHtml(getOrderTotalLabel(order))}:</strong> ${formatMoney(order.total_price)} ₽</p>
       ${order.delivery_method !== 'pickup' && order.delivery_price_confirmed !== true ? '<p style="padding:10px 12px;border-radius:10px;background:#f7f1e8;color:#6d5d4d;font-size:14px">Стоимость доставки пока не включена в сумму: мы согласуем тариф до оплаты.</p>' : ''}
@@ -145,18 +203,22 @@ const sendOrderCreatedEmails = async order => {
       <p style="margin:24px 0"><a href="${escapeHtml(order_link)}" style="color:#6f5230;font-weight:700">Открыть заказ</a></p>
     </div>`
 
-  const recipients = [
-    {to: order.email, subject: `TauHorse — заказ №${order.id} получен`},
-    ...((process.env.ORDER_NOTIFICATION_EMAIL || config.orderNotificationEmail) ? [{to: process.env.ORDER_NOTIFICATION_EMAIL || config.orderNotificationEmail, subject: `TauHorse — новый заказ №${order.id}`}]: [])
-  ]
+  // Отдельные отправки: сбой письма покупателю не должен мешать администратору.
+  // Повторная отправка при повторном POST не происходит благодаря idempotency_key заказа.
+  const deliveries = [{to: order.email, subject: `TauHorse — заказ №${order.id} получен`, text, html}]
+  if (admin_email) deliveries.push({to: admin_email, ...buildAdminOrderMessage(order)})
+  else console.error('ORDER_NOTIFICATION_EMAIL не задан: администратор не получит письмо о новом заказе')
 
-  await Promise.all(recipients.map(message => transporter.sendMail({
+  const results = await Promise.allSettled(deliveries.map(message => transporter.sendMail({
     from: getFrom(),
-    ...message,
-    text,
-    html
+    ...message
   })))
-  return true
+  for (const [index, result] of results.entries()) {
+    if (result.status === 'rejected') {
+      console.error(`Не удалось отправить письмо о заказе №${order.id} (${index === 0 ? 'покупателю' : 'администратору'}):`, result.reason)
+    }
+  }
+  return results.every(result => result.status === 'fulfilled')
 }
 
 const sendOrderStatusEmail = async order => {

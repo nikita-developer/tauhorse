@@ -2,6 +2,8 @@ export default defineNuxtRouteMiddleware(async to=>{
   if(import.meta.server)return
   const auth=useAuthStore()
   if(!auth.is_initialized)await auth.initAuth()
+  // Сбой сети не равен выходу из аккаунта. Сессия сохранится в cookie.
+  if(!auth.is_initialized)return abortNavigation(createError({statusCode:503,statusMessage:'Не удалось проверить авторизацию. Попробуйте обновить страницу.'}))
   if(!auth.is_authenticated)return navigateTo('/login')
   const user=auth.user
   if(!user?.is_active||!['admin','manager'].includes(user?.role))return navigateTo('/')

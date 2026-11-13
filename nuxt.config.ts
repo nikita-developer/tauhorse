@@ -23,7 +23,8 @@ export default defineNuxtConfig({
         jwtAccessSecret: '',
         jwtRefreshSecret: '',
         jwtAccessExpiresIn: '15m',
-        jwtRefreshExpiresIn: '7d',
+        jwtRefreshExpiresIn: '7d', // административные аккаунты и менеджеры
+        jwtCustomerRefreshExpiresIn: '30d', // покупатели
         smtpHost: process.env.SMTP_HOST || '',
         smtpPort: process.env.SMTP_PORT || '',
         smtpSecure: process.env.SMTP_SECURE || 'false',

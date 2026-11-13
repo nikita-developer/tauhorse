@@ -1,5 +1,5 @@
 import auth_service from '../../services/auth.service'
-import {refresh_cookie_options} from '../../utils/cookies'
+import {refreshCookieOptionsForToken} from '../../utils/cookies'
 import {sendJsonError} from '../../utils/http'
 import {enforceRateLimit} from '../../utils/rate-limit'
 
@@ -11,7 +11,7 @@ export default defineEventHandler(async event => {
       user_agent: getHeader(event, 'user-agent') || null,
       ip_address: getRequestIP(event, {xForwardedFor: true}) || null
     })
-    setCookie(event, 'refresh_token', result.refresh_token, refresh_cookie_options)
+    setCookie(event, 'refresh_token', result.refresh_token, refreshCookieOptionsForToken(result.refresh_token))
     return {access_token: result.access_token}
   } catch (error) {
     sendJsonError(error)

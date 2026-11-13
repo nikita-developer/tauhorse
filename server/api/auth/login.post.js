@@ -1,6 +1,6 @@
 import auth_service from '../../services/auth.service'
 import cart_service from '../../services/cart.service'
-import {refresh_cookie_options} from '../../utils/cookies'
+import {refreshCookieOptionsForToken} from '../../utils/cookies'
 import {createRequestContext, sendJsonError} from '../../utils/http'
 import {enforceRateLimit} from '../../utils/rate-limit'
 
@@ -22,7 +22,7 @@ export default defineEventHandler(async event => {
       console.error('Не удалось объединить гостевую корзину:', merge_error)
     }
 
-    setCookie(event, 'refresh_token', result.refresh_token, refresh_cookie_options)
+    setCookie(event, 'refresh_token', result.refresh_token, refreshCookieOptionsForToken(result.refresh_token))
 
     return {
       user: result.user,

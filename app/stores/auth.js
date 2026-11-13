@@ -2,6 +2,13 @@ import {defineStore} from 'pinia'
 import {useRequestHeaders} from '#app'
 import {createApiUrl, getApiErrorMessage, getAuthHeaders, isJwtExpiring} from '~/utils/api'
 
+// Только подтверждённый отказ авторизации означает, что нужно выйти.
+// Ошибки сети и 5xx не должны удалять вход пользователя.
+const isDefinitiveAuthError = error => {
+    const status = Number(error?.statusCode || error?.status || error?.response?.status)
+    return status === 401 || status === 403
+}
+
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null,
@@ -37,13 +44,21 @@ export const useAuthStore = defineStore('auth', {
             this.init_promise = (async () => {
                 this.is_loading = true
 
+                let initialized = false
                 try {
                     await this.refreshToken()
                     await this.fetchMe()
-                } catch {
-                    this.clearAuthData()
+                    initialized = true
+                } catch (error) {
+                    if (isDefinitiveAuthError(error)) {
+                        this.clearAuthData()
+                        initialized = true
+                    } else {
+                        // На следующем обращении повторим восстановление сессии.
+                        console.warn('Не удалось восстановить сессию: временная ошибка')
+                    }
                 } finally {
-                    this.is_initialized = true
+                    this.is_initialized = initialized
                     this.is_loading = false
                     this.init_promise = null
                 }
@@ -111,11 +126,23 @@ export const useAuthStore = defineStore('auth', {
                 ? useRequestHeaders(['cookie'])
                 : undefined
 
-            this.refresh_promise = $fetch(createApiUrl('/auth/refresh'), {
+            const fetchRefresh = () => $fetch(createApiUrl('/auth/refresh'), {
                 method: 'POST',
                 credentials: 'include',
                 headers
             })
+
+            // Refresh token вращается после каждого запроса. Без блокировки
+            // две вкладки могут отправить одну и ту же cookie: вторая получит 401.
+            // Web Locks сериализует обращения к cookie между вкладками домена.
+            const safelyRefresh = () => {
+                if (import.meta.client && navigator.locks?.request) {
+                    return navigator.locks.request('tauhorse-auth-refresh', fetchRefresh)
+                }
+                return fetchRefresh()
+            }
+
+            this.refresh_promise = safelyRefresh()
                 .then(response => {
                     this.access_token = response.access_token
                     return response
@@ -136,7 +163,7 @@ export const useAuthStore = defineStore('auth', {
                     await this.refreshToken()
                     await this.fetchMe()
                 } catch (refresh_error) {
-                    this.clearAuthData()
+                    if (isDefinitiveAuthError(refresh_error)) this.clearAuthData()
                     throw refresh_error
                 }
             }
@@ -164,7 +191,7 @@ export const useAuthStore = defineStore('auth', {
                     await this.fetchMe()
                     return await execute()
                 } catch (refresh_error) {
-                    this.clearAuthData()
+                    if (isDefinitiveAuthError(refresh_error)) this.clearAuthData()
                     throw refresh_error
                 }
             }

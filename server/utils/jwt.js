@@ -12,11 +12,20 @@ export const generateAccessToken = payload => {
   })
 }
 
+// Покупатели входят на 30 дней, сотрудники (администраторы и менеджеры) — на 7.
+// Старые токены до своего истечения остаются действительными.
+export const getRefreshTokenLifetime = role => {
+  const config = getConfig()
+  return role === 'user'
+    ? (config.jwtCustomerRefreshExpiresIn || '30d')
+    : (config.jwtRefreshExpiresIn || '7d')
+}
+
 export const generateRefreshToken = payload => {
   const config = getConfig()
   return jwt.sign(payload, config.jwtRefreshSecret, {
     algorithm: JWT_ALGORITHM,
-    expiresIn: config.jwtRefreshExpiresIn,
+    expiresIn: getRefreshTokenLifetime(payload.role),
     jwtid: crypto.randomUUID()
   })
 }
